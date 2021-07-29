@@ -92,17 +92,17 @@ var h = hub{
 	rooms:      make(map[string]map[*connection]bool),
 }
 
-func (s subscription) readPump(bs *BetterSocket) {
+func (s subscription) readPump() {
 	c := s.conn
 	defer func() {
-		bs.h.unregister <- s
+		c.bs.h.unregister <- s
 		c.ws.Close()
 	}()
 
-	c.ws.SetReadLimit(int64(bs.c.MaxMessageSize))
-	c.ws.SetReadDeadline(time.Now().Add(bs.c.PongWait))
+	c.ws.SetReadLimit(int64(s.conn.bs.c.MaxMessageSize))
+	c.ws.SetReadDeadline(time.Now().Add(s.conn.bs.c.PongWait))
 	c.ws.SetPongHandler(func(string) error {
-		c.ws.SetReadDeadline(time.Now().Add(bs.c.PongWait))
+		c.ws.SetReadDeadline(time.Now().Add(s.conn.bs.c.PongWait))
 		return nil
 	})
 
@@ -117,13 +117,13 @@ func (s subscription) readPump(bs *BetterSocket) {
 
 		m := message{msg, s.room}
 
-		bs.h.broadcast <- m
+		s.conn.bs.h.broadcast <- m
 	}
 }
 
-func (s *subscription) writePump(bs *BetterSocket) {
+func (s *subscription) writePump() {
 	c := s.conn
-	ticker := time.NewTicker(bs.c.pingPeriod)
+	ticker := time.NewTicker(s.conn.bs.c.pingPeriod)
 	defer func() {
 		ticker.Stop()
 		c.ws.Close()
@@ -132,20 +132,20 @@ func (s *subscription) writePump(bs *BetterSocket) {
 		select {
 		case message, ok := <-c.send:
 			if !ok {
-				c.write(bs, websocket.CloseMessage, []byte{})
+				c.write(websocket.CloseMessage, []byte{})
 				return
 			}
-			if err := c.write(bs, websocket.TextMessage, message); err != nil {
+			if err := c.write(websocket.TextMessage, message); err != nil {
 				return
 			}
 		case <-ticker.C:
-			if err := c.write(bs, websocket.PingMessage, []byte{}); err != nil {
+			if err := c.write(websocket.PingMessage, []byte{}); err != nil {
 				return
 			}
 		}
 	}
 }
-func (c *connection) write(bs *BetterSocket, mt int, payload []byte) error {
-	c.ws.SetWriteDeadline(time.Now().Add(bs.c.WriteWait))
+func (c *connection) write(mt int, payload []byte) error {
+	c.ws.SetWriteDeadline(time.Now().Add(c.bs.c.WriteWait))
 	return c.ws.WriteMessage(mt, payload)
 }

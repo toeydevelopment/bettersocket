@@ -69,14 +69,15 @@ func (bs *BetterSocket) ServeWS(ctx context.Context, w http.ResponseWriter, r *h
 	c := &connection{
 		ws:   ws,
 		send: make(chan []byte, 256),
+		bs:   bs,
 	}
 
 	s := subscription{conn: c, room: roomID}
 
 	bs.h.register <- s
 
-	go s.readPump(bs)
-	go s.writePump(bs)
+	go s.readPump()
+	go s.writePump()
 
 	return nil
 

@@ -21,27 +21,5 @@ type connection struct {
 
 	// Buffered channel of outbound messages.
 	send chan []byte
+	bs   *BetterSocket
 }
-
-// func (s subscription) readPump() {
-// 	c := s.conn
-// 	defer func() {
-// 		h.unregister <- s
-// 		c.ws.Close()
-// 	}()
-
-// 	c.ws.SetReadLimit(maxMessageSize)
-// 	c.ws.SetReadDeadline(time.Now().Add(pongWait))
-// 	c.ws.SetPongHandler(func(string) error { c.ws.SetReadDeadline(time.Now().Add(pongWait)); return nil })
-// 	for {
-// 		_, msg, err := c.ws.ReadMessage()
-// 		if err != nil {
-// 			if websocket.IsUnexpectedCloseError(err, websocket.CloseGoingAway) {
-// 				log.Printf("error: %v", err)
-// 			}
-// 			break
-// 		}
-// 		m := message{msg, s.room}
-// 		Hub.broadcast <- m
-// 	}
-// }
